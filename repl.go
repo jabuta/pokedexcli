@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/jabuta/pokedexcli/internal/pokeAPI"
 )
 
-func startREPL() {
+func startREPL(conf *config) {
 
 	scanner := bufio.NewScanner(os.Stdin)
-	conf := &config{}
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -23,8 +24,8 @@ func startREPL() {
 		}
 
 		command := words[0]
-		if cmd, ok := getCommands(conf)[command]; ok {
-			if err := cmd.callback(); err != nil {
+		if cmd, ok := getCommands()[command]; ok {
+			if err := cmd.callback(conf); err != nil {
 				fmt.Println(err)
 			}
 		} else {
@@ -42,15 +43,16 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*config) error
 }
 
 type config struct {
-	next string
-	prev string
+	client pokeAPI.Client
+	next   *string
+	prev   *string
 }
 
-func getCommands(conf *config) map[string]cliCommand {
+func getCommands() map[string]cliCommand {
 
 	return map[string]cliCommand{
 		"help": {
@@ -66,12 +68,12 @@ func getCommands(conf *config) map[string]cliCommand {
 		"map": {
 			name:        "map",
 			description: "Retrieve the next locations",
-			callback:    commandMap(conf),
+			callback:    commandMap,
 		},
 		"mapb": {
 			name:        "map",
 			description: "Retrieve the next locations",
-			callback:    commandMapB(conf),
+			callback:    commandMapB,
 		},
 	}
 }
