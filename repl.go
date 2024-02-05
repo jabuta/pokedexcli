@@ -25,7 +25,7 @@ func startREPL(conf *config) {
 
 		command := words[0]
 		if cmd, ok := getCommands()[command]; ok {
-			if err := cmd.callback(conf, words[1:]); err != nil {
+			if err := cmd.callback(conf, words[1:]...); err != nil {
 				fmt.Println(err)
 			}
 		} else {
@@ -43,7 +43,7 @@ func cleanInput(text string) []string {
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*config, []string) error
+	callback    func(*config, ...string) error
 }
 
 type config struct {
@@ -85,6 +85,16 @@ func getCommands() map[string]cliCommand {
 			name:        "catch",
 			description: "Try to catch a pokemon",
 			callback:    catch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "View info in a pokemon you caught",
+			callback:    inspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "View the pokemon you've caught",
+			callback:    pokedex,
 		},
 	}
 }

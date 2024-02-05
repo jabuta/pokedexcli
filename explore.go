@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func explore(conf *config, args []string) error {
+func explore(conf *config, args ...string) error {
 	if len(args) != 1 {
 		return errors.New("provide a location name or id")
 	}
