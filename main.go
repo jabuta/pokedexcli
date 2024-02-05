@@ -9,7 +9,8 @@ import (
 func main() {
 	client := pokeAPI.NewClient(5*time.Second, 1*time.Minute)
 	conf := &config{
-		client: client,
+		client:        client,
+		caughtPokemon: make(map[string]pokeAPI.Pokemon),
 	}
 	startREPL(conf)
 }

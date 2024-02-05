@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func (c *Client) ListPokemon(location string) (PokemonResponse, error) {
+func (c *Client) ListPokemon(location string) (Location, error) {
 	if location == "" {
-		return PokemonResponse{}, errors.New("no location")
+		return Location{}, errors.New("no location")
 	}
 	endPoint := baseURL + "/location-area/" + location
 
@@ -19,38 +19,38 @@ func (c *Client) ListPokemon(location string) (PokemonResponse, error) {
 
 		req, err := http.NewRequest("GET", endPoint, nil)
 		if err != nil {
-			return PokemonResponse{}, err
+			return Location{}, err
 		}
 
 		res, err := c.httpClient.Do(req)
 		if err != nil {
-			return PokemonResponse{}, err
+			return Location{}, err
 		}
 
 		responseBody, err = io.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
-			return PokemonResponse{}, err
+			return Location{}, err
 		}
 		if res.StatusCode > 299 {
-			return PokemonResponse{}, errors.New(res.Status)
+			return Location{}, errors.New(res.Status)
 		}
 
 		c.cache.Add(endPoint, responseBody)
 	}
 
-	pokemonList := PokemonResponse{}
+	pokemonList := Location{}
 	err := json.Unmarshal(responseBody, &pokemonList)
 	if err != nil {
-		return PokemonResponse{}, err
+		return Location{}, err
 	}
 	return pokemonList, nil
 
 }
 
-type PokemonResponse struct {
-	LocationName string `json:"name"` // Assuming "name" is the field for location name
-	Encounters   []struct {
+type Location struct {
+	Name       string `json:"name"` // Assuming "name" is the field for location name
+	Encounters []struct {
 		Pokemon struct {
 			Name string `json:"name"`
 		} `json:"pokemon"`
