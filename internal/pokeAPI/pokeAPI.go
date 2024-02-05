@@ -6,17 +6,21 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/jabuta/pokedexcli/internal/pokecache"
 )
 
 type Client struct {
 	httpClient http.Client
+	cache      *pokecache.Cache
 }
 
-func NewClient(timeout time.Duration) Client {
+func NewClient(timeout time.Duration, cacheTtl time.Duration) Client {
 	return Client{
 		httpClient: http.Client{
 			Timeout: timeout,
 		},
+		cache: pokecache.NewCache(cacheTtl),
 	}
 }
 
@@ -28,27 +32,34 @@ func (c *Client) ListLocations(pageURL *string) (LocationResponse, error) {
 		endPoint = *pageURL
 	}
 
-	req, err := http.NewRequest("GET", endPoint, nil)
-	if err != nil {
-		return LocationResponse{}, err
-	}
+	var responseBody []byte
+	responseBody, ok := c.cache.Get(endPoint)
+	if !ok {
 
-	res, err := c.httpClient.Do(req)
-	if err != nil {
-		return LocationResponse{}, err
-	}
+		req, err := http.NewRequest("GET", endPoint, nil)
+		if err != nil {
+			return LocationResponse{}, err
+		}
 
-	responseBody, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return LocationResponse{}, err
-	}
-	if res.StatusCode > 299 {
-		return LocationResponse{}, errors.New(res.Status)
+		res, err := c.httpClient.Do(req)
+		if err != nil {
+			return LocationResponse{}, err
+		}
+
+		responseBody, err = io.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			return LocationResponse{}, err
+		}
+		if res.StatusCode > 299 {
+			return LocationResponse{}, errors.New(res.Status)
+		}
+
+		c.cache.Add(endPoint, responseBody)
 	}
 
 	locationList := LocationResponse{}
-	err = json.Unmarshal(responseBody, &locationList)
+	err := json.Unmarshal(responseBody, &locationList)
 	if err != nil {
 		return LocationResponse{}, err
 	}
